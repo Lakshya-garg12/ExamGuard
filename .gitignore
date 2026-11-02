@@ -1,0 +1,30 @@
+# Python Virtual Environment
+venv/
+ENV/
+env/
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Ultralytics & Model Runs
+runs/
+*.mp4
+*.avi
+
+# Local SQLite Database & Evidence Snapshots
+examguard.db
+data/alerts_evidence/*.jpg
+
+# Large Datasets (Keep raw data local)
+data/raw/
+data/processed/
+
+# System & IDE
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini

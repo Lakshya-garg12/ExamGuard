@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExamGuard - AI Exam Environment Monitoring Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #e2e8f0;
+        }
+        .pulse-red {
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-[#111827]/80 backdrop-blur border-b border-gray-800 sticky top-0 z-40 px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <i class="ph-bold ph-shield-check text-2xl text-white"></i>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-xl font-bold tracking-tight text-white">ExamGuard</h1>
+                    <span class="px-2 py-0.5 text-xs font-semibold bg-cyan-950 text-cyan-400 border border-cyan-800 rounded-full">AI Invigilator Assistant</span>
+                </div>
+                <p class="text-xs text-gray-400">Intelligent Exam Hall Anomaly & Object Monitoring System</p>
+            </div>
+        </div>
+
+        <!-- System Status & Model Tags -->
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-gray-300 font-medium" id="statusIndicator">System Active</span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-2 px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-xs">
+                <i class="ph ph-cpu text-blue-400 text-sm"></i>
+                <span class="text-gray-400">Engine:</span>
+                <span class="text-blue-300 font-semibold" id="modelTypeBadge">YOLO + ByteTrack</span>
+            </div>
+
+            <div class="text-xs text-gray-400 bg-gray-900 border border-gray-800 px-3 py-1.5 rounded-lg flex items-center space-x-2">
+                <i class="ph ph-clock text-gray-400"></i>
+                <span id="currentTimeClock">--:--:--</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 p-6 space-y-6 max-w-[1800px] w-full mx-auto">
+
+        <!-- KPI Statistic Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Total Alerts Card -->
+            <div class="bg-gray-900/60 border border-gray-800/80 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                <div>
+                    <p class="text-xs font-medium uppercase tracking-wider text-gray-400">Total Alerts</p>
+                    <h3 class="text-3xl font-extrabold text-white mt-1" id="statTotalAlerts">0</h3>
+                    <p class="text-xs text-gray-500 mt-1">Detected across sessions</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center text-2xl">
+                    <i class="ph-bold ph-bell"></i>
+                </div>
+            </div>
+
+            <!-- Pending Review Card -->
+            <div class="bg-gray-900/60 border border-gray-800/80 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                <div>
+                    <p class="text-xs font-medium uppercase tracking-wider text-amber-400">Pending Review</p>
+                    <h3 class="text-3xl font-extrabold text-amber-400 mt-1" id="statPendingReviews">0</h3>
+                    <p class="text-xs text-gray-500 mt-1">Awaiting invigilator action</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-2xl">
+                    <i class="ph-bold ph-hourglass-high"></i>
+                </div>
+            </div>
+
+            <!-- Verified Infractions Card -->
+            <div class="bg-gray-900/60 border border-gray-800/80 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                <div>
+                    <p class="text-xs font-medium uppercase tracking-wider text-rose-400">Verified Infractions</p>
+                    <h3 class="text-3xl font-extrabold text-rose-400 mt-1" id="statVerifiedInfractions">0</h3>
+                    <p class="text-xs text-gray-500 mt-1">Confirmed unauthorized items</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-2xl">
+                    <i class="ph-bold ph-warning-octagon"></i>
+                </div>
+            </div>
+
+            <!-- False Alarms Dismissed -->
+            <div class="bg-gray-900/60 border border-gray-800/80 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                <div>
+                    <p class="text-xs font-medium uppercase tracking-wider text-emerald-400">Dismissed Alarms</p>
+                    <h3 class="text-3xl font-extrabold text-emerald-400 mt-1" id="statDismissedAlarms">0</h3>
+                    <p class="text-xs text-gray-500 mt-1">Cleared by invigilator</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-2xl">
+                    <i class="ph-bold ph-check-circle"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Workspace: Video Feed (Left) & Alert Panel (Right) -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Video Monitoring Viewport (8 Columns) -->
+            <div class="lg:col-span-8 flex flex-col space-y-4">
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+                    <!-- Stream Title Bar -->
+                    <div class="bg-[#131b2e] px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                            <span class="text-sm font-semibold text-white">Live Monitoring Feed</span>
+                            <span class="text-xs text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded" id="cameraTitleBadge">ExamHall-Cam-01</span>
+                        </div>
+                        <div class="flex items-center space-x-3 text-xs text-gray-400">
+                            <span>FPS: <strong class="text-white" id="fpsDisplay">25</strong></span>
+                            <span>|</span>
+                            <span>Detections: <strong class="text-cyan-400" id="detectionCountBadge">Active</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Video Container -->
+                    <div class="relative bg-black flex items-center justify-center min-h-[440px] max-h-[580px] overflow-hidden group">
+                        <img id="liveVideoFeed" src="/api/video_feed" alt="Live Camera Feed" class="w-full h-full object-contain">
+                        
+                        <!-- Watermark Overlay -->
+                        <div class="absolute bottom-3 left-4 pointer-events-none opacity-80 text-[11px] bg-black/60 backdrop-blur px-2.5 py-1 rounded border border-white/10 text-gray-300">
+                            ExamGuard AI v1.0 • Human-in-the-Loop Assistive Mode
+                        </div>
+                    </div>
+
+                    <!-- Camera & Model Controls Toolbar -->
+                    <div class="p-4 bg-[#111827] border-t border-gray-800 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center space-x-2">
+                            <button onclick="switchToWebcam()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium rounded-lg border border-gray-700 flex items-center space-x-1.5 transition">
+                                <i class="ph ph-webcam text-cyan-400 text-sm"></i>
+                                <span>Default Webcam</span>
+                            </button>
+
+                            <label class="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs font-medium rounded-lg border border-blue-500/30 cursor-pointer flex items-center space-x-1.5 transition">
+                                <i class="ph ph-upload text-sm"></i>
+                                <span>Upload Test Video</span>
+                                <input type="file" id="videoUploadInput" accept="video/mp4,video/avi" class="hidden" onchange="uploadVideoFile(this)">
+                            </label>
+                        </div>
+
+                        <!-- Sensitivity / Confidence Slider -->
+                        <div class="flex items-center space-x-3 text-xs">
+                            <span class="text-gray-400">Confidence Threshold:</span>
+                            <input type="range" id="confSlider" min="0.10" max="0.90" step="0.05" value="0.30" class="w-28 accent-cyan-500 cursor-pointer" oninput="updateConfidence(this.value)">
+                            <span class="font-bold text-cyan-400 w-8" id="confValueLabel">30%</span>
+                        </div>
+
+                        <!-- ByteTrack Toggle -->
+                        <div class="flex items-center space-x-2 text-xs">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="trackingToggle" checked class="sr-only peer" onchange="toggleTracking(this.checked)">
+                                <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-600"></div>
+                                <span class="ml-2 text-gray-300">ByteTrack Tracking</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guidance / College Notice Alert -->
+                <div class="bg-blue-950/30 border border-blue-800/40 rounded-xl p-3.5 flex items-start space-x-3 text-xs text-blue-200">
+                    <i class="ph-bold ph-info text-blue-400 text-lg flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <strong class="text-blue-300">College Examination Protocol:</strong>
+                        AI alerts serve strictly as situational awareness for human invigilators. An alert highlights potential unauthorized items (e.g. mobile phones, cheat notes). Always perform visual or physical verification before taking disciplinary action.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-Time Alerts & Review Panel (4 Columns) -->
+            <div class="lg:col-span-4 flex flex-col space-y-4">
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl flex flex-col h-[650px] shadow-xl overflow-hidden">
+                    
+                    <!-- Panel Header -->
+                    <div class="p-4 border-b border-gray-800 flex items-center justify-between bg-[#131b2e]">
+                        <div class="flex items-center space-x-2">
+                            <i class="ph-bold ph-warning text-amber-400 text-lg"></i>
+                            <h2 class="font-bold text-white text-sm">Real-Time Alert Feed</h2>
+                        </div>
+                        <button onclick="fetchAlerts()" class="text-xs text-gray-400 hover:text-cyan-400 transition flex items-center space-x-1">
+                            <i class="ph ph-arrows-clockwise text-sm"></i>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+
+                    <!-- Severity Filter Tabs -->
+                    <div class="flex border-b border-gray-800 bg-[#0f1422] text-xs font-medium">
+                        <button onclick="setFilter('ALL')" id="filterBtnALL" class="flex-1 py-2 text-cyan-400 border-b-2 border-cyan-500">All</button>
+                        <button onclick="setFilter('PENDING')" id="filterBtnPENDING" class="flex-1 py-2 text-gray-400 hover:text-gray-200">Pending</button>
+                        <button onclick="setFilter('HIGH')" id="filterBtnHIGH" class="flex-1 py-2 text-gray-400 hover:text-gray-200">High Risk</button>
+                    </div>
+
+                    <!-- Alert Cards List -->
+                    <div id="alertsContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+                        <!-- Populated by JavaScript -->
+                        <div class="text-center py-16 text-gray-500 text-xs">
+                            <i class="ph ph-shield-check text-4xl mb-2 text-gray-600"></i>
+                            <p>No active alerts. Monitoring examination hall...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Human-in-the-Loop Review Modal -->
+    <div id="reviewModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl">
+            <!-- Modal Header -->
+            <div class="bg-[#131b2e] px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span id="modalSeverityBadge" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-600/20 text-red-400 border border-red-500/30">HIGH ALERT</span>
+                    <h3 class="font-bold text-white" id="modalAlertTitle">Mobile Phone Detected</h3>
+                </div>
+                <button onclick="closeReviewModal()" class="text-gray-400 hover:text-white text-xl">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                <!-- Evidence Snapshot Preview -->
+                <div class="rounded-xl overflow-hidden border border-gray-800 bg-black max-h-72 flex items-center justify-center">
+                    <img id="modalEvidenceImg" src="" alt="Evidence Snapshot" class="w-full h-auto object-contain">
+                </div>
+
+                <!-- Incident Metadata Grid -->
+                <div class="grid grid-cols-2 gap-3 text-xs bg-gray-950/60 p-3.5 rounded-xl border border-gray-800">
+                    <div>
+                        <span class="text-gray-500">Alert Reference ID:</span>
+                        <p class="font-mono text-cyan-400 font-semibold" id="modalAlertId">ALT-000</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Timestamp:</span>
+                        <p class="text-gray-300" id="modalTimestamp">--</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">AI Confidence:</span>
+                        <p class="text-emerald-400 font-semibold" id="modalConfidence">--%</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Camera / Hall:</span>
+                        <p class="text-gray-300" id="modalCamera">ExamHall-Cam-01</p>
+                    </div>
+                </div>
+
+                <!-- Invigilator Notes Input -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-medium text-gray-300">Invigilator Observation & Notes:</label>
+                    <textarea id="modalNotesInput" rows="3" placeholder="e.g. Inspected candidate desk. Verified mobile phone in lap, confiscated as per exam rulebook." class="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-cyan-500"></textarea>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="bg-[#111827] px-6 py-4 border-t border-gray-800 flex items-center justify-end space-x-3">
+                <button onclick="closeReviewModal()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded-xl transition">Cancel</button>
+                <button onclick="submitReview('DISMISSED_FALSE_ALARM')" class="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 text-xs font-semibold rounded-xl transition flex items-center space-x-1.5">
+                    <i class="ph-bold ph-check"></i>
+                    <span>Dismiss (False Alarm)</span>
+                </button>
+                <button onclick="submitReview('FLAGGED_INFRACTION')" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-rose-600/20 transition flex items-center space-x-1.5">
+                    <i class="ph-bold ph-shield-warning"></i>
+                    <span>Confirm Infraction</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Application Logic -->
+    <script>
+        let currentAlerts = [];
+        let activeFilter = 'ALL';
+        let selectedAlertId = null;
+
+        // Clock update
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('currentTimeClock').innerText = now.toLocaleTimeString();
+        }, 1000);
+
+        // Fetch System Stats & Alerts on interval
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                document.getElementById('statTotalAlerts').innerText = data.total_alerts || 0;
+                document.getElementById('statPendingReviews').innerText = data.pending_reviews || 0;
+                document.getElementById('statVerifiedInfractions').innerText = data.verified_infractions || 0;
+                document.getElementById('statDismissedAlarms').innerText = data.dismissed_false_alarms || 0;
+            } catch (e) {
+                console.error("Failed to fetch stats", e);
+            }
+        }
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                document.getElementById('fpsDisplay').innerText = data.fps || 25;
+                document.getElementById('cameraTitleBadge').innerText = data.camera_id || 'ExamHall-Cam-01';
+                if (data.is_custom_model) {
+                    document.getElementById('modelTypeBadge').innerText = "Custom Exam Stationery";
+                }
+            } catch (e) {
+                console.error("Failed to fetch status", e);
+            }
+        }
+
+        async function fetchAlerts() {
+            try {
+                const res = await fetch('/api/alerts?limit=30');
+                const data = await res.json();
+                currentAlerts = data.alerts || [];
+                renderAlerts();
+            } catch (e) {
+                console.error("Failed to fetch alerts", e);
+            }
+        }
+
+        function setFilter(filter) {
+            activeFilter = filter;
+            ['ALL', 'PENDING', 'HIGH'].forEach(f => {
+                const btn = document.getElementById(`filterBtn${f}`);
+                if (f === filter) {
+                    btn.className = "flex-1 py-2 text-cyan-400 border-b-2 border-cyan-500 font-bold";
+                } else {
+                    btn.className = "flex-1 py-2 text-gray-400 hover:text-gray-200";
+                }
+            });
+            renderAlerts();
+        }
+
+        function renderAlerts() {
+            const container = document.getElementById('alertsContainer');
+            let filtered = currentAlerts;
+            if (activeFilter === 'PENDING') {
+                filtered = currentAlerts.filter(a => a.review_status === 'PENDING');
+            } else if (activeFilter === 'HIGH') {
+                filtered = currentAlerts.filter(a => a.severity === 'HIGH');
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16 text-gray-500 text-xs">
+                        <i class="ph ph-shield-check text-4xl mb-2 text-gray-600"></i>
+                        <p>No alerts in this category.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(alert => {
+                let badgeColor = "bg-rose-500/20 text-rose-400 border-rose-500/30";
+                if (alert.severity === 'MEDIUM') badgeColor = "bg-amber-500/20 text-amber-400 border-amber-500/30";
+                if (alert.severity === 'INFO') badgeColor = "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+
+                let statusBadge = `<span class="px-2 py-0.5 text-[10px] rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">Pending Review</span>`;
+                if (alert.review_status === 'FLAGGED_INFRACTION') {
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold">Confirmed Infraction</span>`;
+                } else if (alert.review_status === 'DISMISSED_FALSE_ALARM') {
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Dismissed</span>`;
+                }
+
+                const evidenceUrl = alert.evidence_path ? `/api/${alert.evidence_path}` : '';
+
+                return `
+                    <div class="p-3 bg-gray-950/70 border border-gray-800/80 rounded-xl hover:border-gray-700 transition flex flex-col space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded border ${badgeColor}">
+                                ${alert.severity} RISK
+                            </span>
+                            ${statusBadge}
+                        </div>
+
+                        <div class="flex items-start space-x-3">
+                            ${evidenceUrl ? `
+                                <img src="${evidenceUrl}" alt="Evidence" class="w-14 h-14 object-cover rounded-lg border border-gray-800 flex-shrink-0 cursor-pointer" onclick="openReviewModal('${alert.alert_id}')">
+                            ` : ''}
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-xs font-bold text-white truncate">${alert.object_label}</h4>
+                                <p class="text-[11px] text-gray-400">Confidence: <span class="text-cyan-400 font-semibold">${Math.round(alert.confidence * 100)}%</span></p>
+                                <p class="text-[10px] text-gray-500">${new Date(alert.timestamp).toLocaleTimeString()}</p>
+                            </div>
+                        </div>
+
+                        <button onclick="openReviewModal('${alert.alert_id}')" class="w-full py-1.5 bg-gray-900 hover:bg-gray-800 border border-gray-700 text-gray-200 text-xs font-medium rounded-lg transition flex items-center justify-center space-x-1">
+                            <i class="ph ph-magnifying-glass text-xs"></i>
+                            <span>Inspect & Review</span>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openReviewModal(alertId) {
+            const alert = currentAlerts.find(a => a.alert_id === alertId);
+            if (!alert) return;
+            selectedAlertId = alertId;
+
+            document.getElementById('modalAlertId').innerText = alert.alert_id;
+            document.getElementById('modalAlertTitle').innerText = `${alert.object_label} Detected`;
+            document.getElementById('modalConfidence').innerText = `${Math.round(alert.confidence * 100)}%`;
+            document.getElementById('modalTimestamp').innerText = new Date(alert.timestamp).toLocaleString();
+            document.getElementById('modalCamera').innerText = alert.camera_id;
+            document.getElementById('modalNotesInput').value = alert.invigilator_notes || '';
+            document.getElementById('modalEvidenceImg').src = `/api/${alert.evidence_path}`;
+
+            const badge = document.getElementById('modalSeverityBadge');
+            badge.innerText = `${alert.severity} SEVERITY`;
+
+            document.getElementById('reviewModal').classList.remove('hidden');
+        }
+
+        function closeReviewModal() {
+            document.getElementById('reviewModal').classList.add('hidden');
+            selectedAlertId = null;
+        }
+
+        async function submitReview(status) {
+            if (!selectedAlertId) return;
+            const notes = document.getElementById('modalNotesInput').value;
+
+            try {
+                await fetch(`/api/alerts/${selectedAlertId}/review`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        review_status: status,
+                        invigilator_notes: notes,
+                        reviewer: 'ExamInvigilator'
+                    })
+                });
+
+                closeReviewModal();
+                fetchStats();
+                fetchAlerts();
+            } catch (e) {
+                alert("Failed to submit review");
+            }
+        }
+
+        async function updateConfidence(val) {
+            document.getElementById('confValueLabel').innerText = `${Math.round(val * 100)}%`;
+            await fetch('/api/camera/control', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({confidence_threshold: parseFloat(val)})
+            });
+        }
+
+        async function toggleTracking(enabled) {
+            await fetch('/api/camera/control', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({enable_tracking: enabled})
+            });
+        }
+
+        async function switchToWebcam() {
+            await fetch('/api/camera/control', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({source: "0"})
+            });
+            document.getElementById('liveVideoFeed').src = `/api/video_feed?t=${Date.now()}`;
+        }
+
+        async function uploadVideoFile(input) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/upload_video', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                alert(`Video "${data.filename}" uploaded successfully! Switching stream.`);
+                document.getElementById('liveVideoFeed').src = `/api/video_feed?t=${Date.now()}`;
+            } catch (e) {
+                alert("Failed to upload video file.");
+            }
+        }
+
+        // Auto polling loops
+        setInterval(fetchStats, 3000);
+        setInterval(fetchStatus, 4000);
+        setInterval(fetchAlerts, 2500);
+
+        // Initial fetch
+        fetchStats();
+        fetchStatus();
+        fetchAlerts();
+    </script>
+</body>
+</html>
+

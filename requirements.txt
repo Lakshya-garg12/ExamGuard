@@ -1,0 +1,19 @@
+# ExamGuard Core Dependencies
+ultralytics>=8.3.0
+opencv-python>=4.8.0
+torch
+torchvision
+numpy
+pillow
+pyyaml
+pandas
+matplotlib
+tqdm
+
+# Web API & Dashboard Server
+fastapi>=0.100.0
+uvicorn>=0.22.0
+python-multipart>=0.0.6
+aiofiles>=23.0.0
+
+
